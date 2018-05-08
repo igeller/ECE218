@@ -1,0 +1,336 @@
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class BigInt: public vector<int>
+{
+    // I am definitng a new class called "bigint", but
+    // it borrows and contains the definitions of everything
+    // that is inside a vector<int>
+    // this is called INHERITANCE
+
+public:
+
+    bool negative;
+
+    BigInt(){
+     negative = false;
+    }
+
+    void become(string s)
+    { clear();
+        int end = 0;
+        if (s[0] == '-')
+        { end = 1;
+            negative = true; }
+        else if (s[0] == '+')
+            end = 1;
+        for (int i = s.length()-1; i >= end; i -= 1)
+        { int digval = s[i] - '0';
+            if (digval < 0 || digval > 9)
+            { cerr << "invalid digit\n";
+                exit(1); }
+            push_back(digval); } }
+
+    void debug()
+    { for (int i = 0; i < size(); i += 1)
+            cout << i << ": " << at(i) << ", ";
+        if (negative)
+            cout << "(negative)";
+        cout << "\n"; }
+
+    void print()
+    { if (negative)
+            cout << "-";
+        for (int i = size()-1; i >= 0; i -= 1)
+            cout << at(i);
+        cout << "\n"; }
+
+    int get_digit(int pos)
+    { if (pos >= size())
+            return 0;
+        return at(pos); }
+
+    void set_digit(int pos, int newval)
+    { if (pos == size())
+            push_back(newval);
+        else
+            at(pos) = newval; }
+
+    void increment()
+    { int pos = 0;
+        while (get_digit(pos) == 9)
+        { set_digit(pos, 0);
+            pos += 1; }
+        set_digit(pos, get_digit(pos)+1); }
+
+    void nines_comp()
+    { for (int i = 0; i < size(); i += 1)
+            set_digit(i, 9 - get_digit(i)); }
+
+    void trim_leading_zeros(){
+        int x = size()-1;
+
+        while(get_digit(x) == 0){
+            pop_back();
+            x--;
+        }
+    }
+
+    void add_ignoring_signs(BigInt & A, BigInt & B)
+    // assumes A and B are positive, even if they aren't
+    { // reference just to avoid wasting time coping,
+        // we will not change A or B
+        clear();
+        int pos = 0, carry = 0;
+        while (pos < A.size() || pos < B.size() || carry > 0)
+        { int sum = A.get_digit(pos) + B.get_digit(pos) + carry;
+            carry = sum / 10;
+            push_back(sum % 10);
+            pos += 1; } }
+
+    void subtract_ignoring_signs(BigInt & A, BigInt & B)
+    { // reference just to avoid wasting time coping,
+        // we will not change A or B
+        clear();
+        int pos = 0, borrow = 0;
+        while (pos < A.size() || pos < B.size())
+        { int diff = A.get_digit(pos) - B.get_digit(pos) - borrow;
+            if (diff < 0)
+            { diff += 10;
+                borrow = 1; }
+            else
+                borrow = 0;
+            push_back(diff);
+            pos += 1; }
+        if (borrow != 0)
+        { cout << "Borrow still set\n";
+            nines_comp();
+            increment();
+            negative = true; }
+        trim_leading_zeros(); }
+
+    void add(BigInt & A, BigInt & B)
+    { if (A.negative && B.negative)
+        { add_ignoring_signs(A, B);
+            negative = true; }
+        else if (A.negative)
+            subtract_ignoring_signs(B, A);
+        else if (B.negative)
+            subtract_ignoring_signs(A, B);
+        else
+            add_ignoring_signs(A, B);
+        trim_leading_zeros();
+    }
+
+
+    void multiply(BigInt & A, BigInt & B){
+        clear();
+        int posBig = 0, posSml = 0, carry = 0, quotient = 0;
+        BigInt n1, n2, sum;
+        string num1="", num2="", t="";
+
+            //to loop through the larger # and compare to each smaller digit
+            for(int i = 0; i < A.size(); i++) {
+                int q = i;
+                //adds the right amount of 0 place holders
+                while (q > 0) {
+                    push_back(0);
+                    q--;
+                }
+                //to loop through smaller # and multiply by the current bigger number
+                for (int j = 0; j < B.size(); j++) {
+                    quotient = A.get_digit(i) * B.get_digit(j);
+
+                    if (carry > 0) {
+                        quotient += carry;
+                    }
+                    if (quotient > 9 && j != B.size() - 1) {
+                        carry = quotient / 10;
+                        quotient %= 10;
+                    }
+                    else
+                        carry = 0;
+                    push_back(quotient);
+                }
+                if(i >= 2) {
+                   n1 = sum;
+                    while(!empty()) {
+                        num2 += to_string(back());
+                        pop_back();
+                    }
+                }
+                else{
+                    while (i % 2 == 0 && !empty()) {
+                        num1 += to_string(back());
+                        pop_back();
+                    }
+                    while (i % 2 != 0 && !empty()) {
+                            num2 += to_string(back());
+                            pop_back();
+                    }
+                    n1.become(num1);
+                }
+                n2.become(num2);
+                num2="";
+                sum.add(n1, n2);
+            }
+
+
+        while(!sum.empty()){
+            push_back(sum.back());
+            sum.pop_back();
+        }
+        while(!empty()){
+            t += to_string(back());
+            pop_back();
+        }
+        sum.become(t);
+        while(!sum.empty()) {
+            push_back(sum.back());
+            sum.pop_back();
+        }
+        trim_leading_zeros();
+    }//end multiply
+
+
+    void factorial(BigInt & A){
+        clear();
+
+        BigInt one, curVal, oldVal, newVal, mult;
+        string s = "";
+        one.become("01");
+        curVal.become("02");
+        newVal = one;
+
+        A.print();
+
+        do{
+            //cout <<"stuck" << endl;
+
+            mult.multiply(curVal, newVal);
+            newVal = mult;
+            cout << "newval: ";newVal.print();
+
+            oldVal = curVal;
+            oldVal.print();
+
+            curVal.add(oldVal, one);
+            cout << "cval: ";curVal.print();
+        } while(curVal != A);
+
+        newVal.print();
+        curVal.print();
+        A.print();
+        if(curVal == A){
+            newVal.print();
+            mult.multiply(curVal, newVal);
+            mult.print();
+            newVal = mult;
+
+        }
+
+
+        while(!newVal.empty()){
+            push_back(newVal.back());
+            newVal.pop_back();
+        }
+        //newVal.print();
+        while(!empty()){
+            s += to_string(back());
+            pop_back();
+        }
+        newVal.become(s);
+        while(!newVal.empty()) {
+            push_back(newVal.back());
+            newVal.pop_back();
+        }
+
+        trim_leading_zeros();
+    }//end factorial
+
+
+
+
+
+
+};
+
+
+
+
+int main() {
+    BigInt A, B, C;
+    string s;
+    char choice;
+    bool run = true;
+    bool op = true;
+
+    cout << "BigInt Calc Operation Options: +, -, *, !" << endl;
+    cout << "Type 'q' at any time to quit" << endl;
+
+    while (run){
+        cout << "Operation: ";
+        cin >> choice;
+        op = true;
+        while(op){
+            if(choice == 'q'){
+                cout << "Quitting. Thanks for playing!";
+                return 0;
+            }
+
+            else if (choice == '+' || choice == '-' || choice == '*' || choice =='!') {
+                cout << "operand1: ";
+                cin >> s;
+                if (s == "q") {
+                    cout << "Quitting. Thanks for playing!";
+                    return 0;
+                }
+                A.become(s);
+
+                if(choice == '+' || choice == '-' || choice == '*') {
+                    cout << "operand2: ";
+                    cin >> s;
+                    if (s == "q") {
+                        cout << "Quitting. Thanks for playing!";
+                        return 0;
+                    }
+                    B.become(s);
+                }
+                op = false;
+            }
+
+            else{
+                cout << "Operation type is not is not valid please choose: +, -, or !" << endl;
+                cout << "Operation: ";
+                cin >> choice;
+            }
+
+        }
+
+
+        switch(choice){
+            case '+':
+                C.add(A, B);
+                break;
+            case '-':
+                C.subtract_ignoring_signs(A, B);
+                //so the answer of subtraction cannot be negative
+                break;
+            case '*':
+                C.multiply(A, B);
+                break;
+            case '!':
+                C.factorial(A);
+                break;
+        }
+        C.print();
+
+        cout << endl;
+    }
+
+
+
+    return 0;
+}

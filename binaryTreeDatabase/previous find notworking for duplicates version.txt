@@ -1,0 +1,367 @@
+#include <string>
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+
+using namespace std;
+
+
+struct person{
+    string fName, lName, dog;
+    int socSec, bDay, zip;
+
+    person(int s, int b, string f, string l, int z){
+        socSec = s;
+        bDay = b;
+        fName = f;
+        lName = l;
+        zip = z;
+        dog = "";
+
+    }
+};
+
+struct node{
+    person * data;
+    node *left, *right;
+
+    node(person * d){
+        data = d;
+        left = NULL;
+        right = NULL;
+    }
+};
+
+struct tree{
+    node *root;
+
+    tree(){
+        root = NULL;
+    }
+};
+
+
+//print all the data of a specified person
+void printAllData(node * t){
+    cout << t->data->socSec << " " << t->data->bDay << " " << t->data->fName << " " << t->data->lName << " " << t->data->zip << " " << t->data->dog << endl;
+}
+
+
+
+//calculates how many people are in the tree
+int numInTree(node * r){
+    if(r == NULL)
+        return 0;
+    int numLeft = numInTree(r->left);
+    int numRight = numInTree(r->right);
+    return 1 + numLeft + numRight;
+
+}
+
+//inserts the names alphabetically into the tree by last name, then by first name
+node * treeInsert(node *r, person *p) {
+    if (r == NULL) {
+        r = new node(p);
+    }
+    if (p->lName == r->data->lName) {
+        //adding in exception to sort by older person if the first and last name are the same
+        //if younger then go left (cause like alphabet its smaller), if older then go right
+        //if negative that means p is older
+        if (p->fName == r->data->fName){
+            if (p->bDay - r->data->bDay > 0)
+                r->left = treeInsert(r->left, p);
+            else if (p->bDay - r->data->bDay < 0)
+                r->right = treeInsert(r->right, p);
+        }
+
+        else if (p->fName < r->data->fName)
+            r->left = treeInsert(r->left, p);
+        else //else (p->fName > r->data->fName)
+            r->right = treeInsert(r->right, p);
+        return r;
+    }
+    if(p->lName < r->data->lName)
+        r->left = treeInsert(r->left, p);
+    else
+        r->right = treeInsert(r->right, p);
+    return r;
+}
+
+
+
+
+
+
+//read the file and store the person in the tree by names
+void readDatabase(ifstream & file, tree *pplTree) {
+    int ss, bday, zip;
+    string fst, lst;
+
+    while(file >> ss >> bday >> fst >> lst >> zip) {
+        person * linePerson = new person(ss, bday, fst, lst, zip);
+        node * p = treeInsert(pplTree->root, linePerson);
+        pplTree->root = p;
+    }
+}
+
+
+node * findPerson(node *r, string fst, string lst){
+    while(r != NULL){
+        if(lst == r->data->lName){
+            if(fst == r->data->fName){
+                return r;
+            }
+
+            else if(fst < r->data->fName)
+                r->left = findPerson(r->left, fst, lst);
+            else
+                r->right = findPerson(r->right, fst, lst);
+        }
+        if(lst < r->data->lName)
+            r = findPerson(r->left, fst, lst);
+        else
+            r = findPerson(r->right, fst, lst);
+        return r;
+    }
+    return NULL;
+}
+
+
+//node and boolean struct says if its true that something was contained
+// in the tree, needed to use this as the return so I could recursively
+//perform withInTree and sameLast methods
+struct nodeAndBool{
+    bool printed;
+    node * returned;
+
+    nodeAndBool(bool p, node *r){
+        printed = p;
+        returned = r;
+    }
+};
+
+
+
+//prints each person's name that is found to have the same zipcode
+//as specified by the user
+void printPersonInZip(person * pInZip){
+    cout << pInZip->fName << " " << pInZip->lName << " " << pInZip->dog << endl;
+}
+
+//returns a struct with whether or not people people live in
+// the specified zipcode based on whetther or not things were printed
+nodeAndBool * sameZip(node * r, int z, bool & printed) {
+    if(r == NULL){
+        return new nodeAndBool(false, NULL);
+    }
+    if(z == r->data->zip){
+        printed = true;
+        printPersonInZip(r->data);
+    }
+    nodeAndBool *left = sameZip(r->left, z, printed);
+    nodeAndBool *right= sameZip(r->right, z, printed);
+    return new nodeAndBool(printed, r);
+
+}
+
+
+
+
+
+//Must use the Node and bool struct so that if the tree is not null,
+//but the last name is not in the tree, it does not skip the if
+//statement in the while true loop in main.
+nodeAndBool * sameLast(node * r, string z, bool &printed) {
+    if(r == NULL)
+        return NULL;
+    if(z == r->data->lName){
+        printed = true;
+        printAllData(r);
+    }
+    nodeAndBool *left = sameLast(r->left, z, printed);
+    nodeAndBool *right= sameLast(r->right, z, printed);
+    return new nodeAndBool(printed, r);
+}
+
+
+
+//OLDEST METHODS
+
+//printing person if 2 people are same age
+void printOldest(node * oldest){
+    cout << oldest->data->fName << " " << oldest->data->lName << " " << oldest->data->zip << " " << oldest->data->dog << endl;
+}
+
+
+//finding the oldest person, it also prints people with the same birthday
+//since we do not have anything else to differentiate who is truly older,
+//like a time
+node * findOldest(node *r){
+    if(r == NULL)
+        return NULL;
+    node * oldLeft = findOldest(r->left);
+    node * oldRight = findOldest(r->right);
+    node * oldest = r;
+
+    //we say if the bday is smaller becuase the int starts with the year
+    //and the smaller the year the older the person.
+    //EX: I am born 1998 < 2000 when my friend was born however I am older
+    if(oldLeft != NULL && oldLeft->data->bDay < oldest->data->bDay)
+        oldest = oldLeft;
+
+    if(oldRight != NULL && oldRight->data->bDay < oldest->data->bDay)
+        oldest = oldRight;
+
+    return oldest;
+}
+
+
+
+node * sameBday(node * r, int z) {
+    if(r == NULL){
+        return NULL;
+    }
+    if(z == r->data->bDay){
+        printOldest(r);
+    }
+    r->left = sameBday(r->left, z);
+    r->right= sameBday(r->right, z);
+    return r;
+}
+
+
+
+
+void printDataBase(node * t) {
+    if (t == NULL)
+        return;
+    printDataBase(t->left);
+    printAllData(t);
+    printDataBase(t->right);
+}
+
+
+int depth = 1;
+void printDataBaseAsTree(node * t)
+{ if (t == NULL)
+        return;
+    depth += 1;
+    printDataBaseAsTree(t->left);
+    depth -= 1;
+    cout << setw(depth*10) << "" << t->data->lName << ", " << t->data->fName <<endl;
+    depth += 1;
+    printDataBaseAsTree(t->right);
+    depth -= 1; }
+
+
+
+
+int main(){
+
+    //create a tree to store the nodes in
+    tree *pplTree = new tree;
+
+
+    //open file and store file in variable myFile
+    string filePath = "/Users/izzy/Documents/College/Freshman (2017 - 2018)/Spring 2018/ECE 218/Homework/binaryTreeDatabase/database.txt";
+    string smallFile = "/Users/izzy/Documents/College/Freshman (2017 - 2018)/Spring 2018/ECE 218/Homework/binaryTreeDatabase/smallDatabase.txt";
+    string rabbitFilePath = "/home/218/database.txt";
+    ifstream myFile;
+    myFile.open(filePath.c_str());
+
+    //if the file could not be opened
+    if(myFile.fail()){
+        cout << "Can't read file\n";
+        exit(1);
+    }
+
+    readDatabase(myFile, pplTree);
+    myFile.close();
+
+    cout << "There are " << numInTree(pplTree->root) << " in the tree\n" <<endl;
+
+
+    cout << "Welcome to the database! What would you like to do?"<<endl;
+    while(true){
+        cout << "What would you like to do?\n"
+             << "\tFIND: display all information about a person\n"
+             << "\tZIP: diplay all names of people living in a given zip code\n"
+             << "\tALL: display all information about all people have a specified lastname\n"
+             << "\tHASDOG: make a note that the specified person has a dog\n"
+             << "\tOLDEST: display the name and zipcode of the oldest person in the database\n"
+             << "\tEXIT: exit database" << endl;
+        cout << "command: ";
+        string choice;
+        getline(cin, choice);
+       // cin >> choice;
+
+
+        if(choice == "EXIT"){
+            cout << "... quitting";
+            break;
+        }
+        else if(choice == "FIND"){
+            string first, last;
+            cout << "Enter first and last name: ";
+            cin >> first >> last;
+
+            node *t =  findPerson(pplTree->root, first, last);
+
+            if(t != NULL)
+                printAllData(t);
+            else
+                cout << "Sorry the person you are looking for (" << first << " " << last << ") is not in the database\n" << endl;
+        }
+        else if(choice == "ZIP"){
+            int zip;
+            bool printedZip = false;
+            cout << "Enter a zipcode: ";
+            cin >> zip;
+            nodeAndBool *zipInfo = sameZip(pplTree->root, zip, printedZip);
+
+            if(!zipInfo->printed)
+                cout << "Sorry no one lives in the zipcode (" << zip << ") you searched for\n" << endl;
+            cout << endl;
+        }
+        else if(choice == "ALL"){
+            string last;
+            bool printedLast = false;
+            cout << "Enter a lastname: ";
+            cin >> last;
+
+            nodeAndBool * lastInfo = sameLast(pplTree->root, last, printedLast);
+            if(!lastInfo->printed)
+                cout << "Sorry no one has the last name (" << last << ") you searched for\n" << endl;
+            cout << endl;
+        }
+        else if(choice == "HASDOG"){
+            string first, last;
+            cout << "Who has a dog: ";
+            cin >> first >> last;
+
+            node * t = findPerson(pplTree->root, first, last);
+            if(findPerson(pplTree->root, first, last) == NULL)
+                cout << "Sorry the person you are saying owns a dog (" << first << " " << last << ") is not in the database\n" << endl;
+            else {
+                t->data->dog = "**DOG**";
+            }
+
+            //how would you like us to specify who has the dog when some people have the same first and last name if we only get the first and last
+            //name from the user.
+        }
+        else if(choice == "OLDEST"){
+            node * oldest = findOldest(pplTree->root);
+            if(oldest == NULL)
+                cout << "Sorry, the database is empty. We cannot find the oldest\n";
+            else
+                sameBday(pplTree->root, oldest->data->bDay);
+        }
+        else{
+            cout << "Sorry, \"" << choice << "\" is not a valid command. Please try again:" << endl;
+        }
+        cout << endl;
+    }
+
+
+    return 0;
+}

@@ -1,0 +1,38 @@
+Script started on Fri Mar  9 12:30:58 2018
+[1m12:30 ~/Homework/3-sortingAlgorithmRace > [mdate
+Fri Mar  9 12:31:01 EST 2018
+[1m12:31 ~/Homework/3-sortingAlgorithmRace > [mdate[K[K[K[Kg++ sortingRacw[Ke.cpp
+[1m12:31 ~/Homework/3-sortingAlgorithmRace > [ma.out 1000
+The command line contained:
+0: a.out
+1: 1000
+selection sort took 0.025895 seconds
+bubble sort took 0.067903 seconds
+[1m12:31 ~/Homework/3-sortingAlgorithmRace > [ma.out 1000[K
+The command line contained:
+0: a.out
+1: 100
+selection sort took 0.000272 seconds
+bubble sort took 0.000689 seconds
+[1m12:31 ~/Homework/3-sortingAlgorithmRace > [ma.out 5000
+The command line contained:
+0: a.out
+1: 5000
+selection sort took 0.651841 seconds
+bubble sort took 1.71358 seconds
+[1m12:31 ~/Homework/3-sortingAlgorithmRace > [ma.out 2500
+The command line contained:
+0: a.out
+1: 2500
+selection sort took 0.163001 seconds
+bubble sort took 0.433023 seconds
+[1m12:31 ~/Homework/3-sortingAlgorithmRace > [ma.out 1000
+The command line contained:
+0: a.out
+1: 1000
+selection sort took 0.025933 seconds
+bubble sort took 0.067972 seconds
+[1m12:32 ~/Homework/3-sortingAlgorithmRace > [mexit
+exit
+
+Script done on Fri Mar  9 12:32:16 2018
