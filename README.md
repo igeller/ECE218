@@ -7,6 +7,6 @@ All code for ECE218 was written in C++.<br/>
 ## Index:
 * **[Prog01](reversePolishCalculator)** -- Stack Based Reverse Polish Calculator
 * **[Prog02](twoDArrays)** -- Two Dimensional Array Objects (Vectors and Templates)
-* **[Prog03](sortingRace)** -- Selection Sort and Bubble Sort Timming 
+* **[Prog03](sortingRace)** -- Selection Sort and Bubble Sort Timing 
 * **[Prog04](bigIntCalc)** -- Big Integer Calculator Using Vectors
 * **[Prog05](binaryTreeDatabase)** -- Binary Tree Database
